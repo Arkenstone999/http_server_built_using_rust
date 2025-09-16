@@ -1,6 +1,6 @@
 use crate::http::{ParseError, Request, Response, StatusCode};
 use std::convert::TryFrom;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncReadExt;
 use tokio::net::TcpListener;
 use std::sync::Arc;
 

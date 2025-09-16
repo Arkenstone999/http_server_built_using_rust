@@ -36,7 +36,7 @@ impl<'buf> Request<'buf> {
         }
     }
 
-    pub fn query_string(&self) -> Option<&QueryString> {
+    pub fn query_string(&self) -> Option<&QueryString<'buf>> {
         self.query_string.as_ref()
     }
 }
@@ -46,7 +46,7 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
 
     fn try_from(buf: &'buf [u8]) -> Result<Request<'buf>, Self::Error> {
         let request = str::from_utf8(buf)?;
-        
+
         if request.len() > 8192 {
             return Err(ParseError::RequestTooLarge);
         }
