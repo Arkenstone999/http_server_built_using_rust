@@ -1,13 +1,14 @@
 use crate::http::{ParseError, Request, Response, StatusCode};
 use std::convert::TryFrom;
-use std::io::Read;
-use std::net::TcpListener;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::TcpListener;
+use std::sync::Arc;
 
-pub trait Handler {
-    fn handle_request(&mut self, request: &Request) -> Response;
+pub trait Handler: Send + Sync + 'static {
+    fn handle_request(&self, request: &Request) -> Response;
 
-    fn handle_bad_request(&mut self, e: &ParseError) -> Response {
-        println!("Failed to parse request: {}", e);
+    fn handle_bad_request(&self, e: &ParseError) -> Response {
+        eprintln!("Failed to parse request: {}", e);
         Response::new(StatusCode::BadRequest, None)
     }
 }
@@ -21,32 +22,47 @@ impl Server {
         Self { addr }
     }
 
-    pub fn run(self, mut handler: impl Handler) {
+    pub async fn run<H: Handler>(self, handler: H) -> Result<(), Box<dyn std::error::Error>> {
+        let listener = TcpListener::bind(&self.addr).await?;
+        let handler = Arc::new(handler);
+        
         println!("Listening on {}", self.addr);
 
-        let listener = TcpListener::bind(&self.addr).unwrap();
-
         loop {
-            match listener.accept() {
-                Ok((mut stream, _)) => {
-                    let mut buffer = [0; 1024];
-                    match stream.read(&mut buffer) {
-                        Ok(_) => {
-                            println!("Received a request: {}", String::from_utf8_lossy(&buffer));
+            match listener.accept().await {
+                Ok((mut stream, addr)) => {
+                    let handler = Arc::clone(&handler);
+                    
+                    tokio::spawn(async move {
+                        let mut buffer = vec![0; 8192];
+                        
+                        match tokio::time::timeout(
+                            std::time::Duration::from_secs(10),
+                            stream.read(&mut buffer)
+                        ).await {
+                            Ok(Ok(size)) => {
+                                if size > 0 {
+                                    buffer.truncate(size);
+                                    
+                                    let response = match Request::try_from(&buffer[..]) {
+                                        Ok(request) => {
+                                            println!("{} {} {}", addr, request.method_str(), request.path());
+                                            handler.handle_request(&request)
+                                        },
+                                        Err(e) => handler.handle_bad_request(&e),
+                                    };
 
-                            let response = match Request::try_from(&buffer[..]) {
-                                Ok(request) => handler.handle_request(&request),
-                                Err(e) => handler.handle_bad_request(&e),
-                            };
-
-                            if let Err(e) = response.send(&mut stream) {
-                                println!("Failed to send response: {}", e);
+                                    if let Err(e) = response.send(&mut stream).await {
+                                        eprintln!("Failed to send response to {}: {}", addr, e);
+                                    }
+                                }
                             }
+                            Ok(Err(e)) => eprintln!("Failed to read from {}: {}", addr, e),
+                            Err(_) => eprintln!("Request timeout from {}", addr),
                         }
-                        Err(e) => println!("Failed to read from connection: {}", e),
-                    }
+                    });
                 }
-                Err(e) => println!("Failed to establish a connection: {}", e),
+                Err(e) => eprintln!("Failed to establish connection: {}", e),
             }
         }
     }

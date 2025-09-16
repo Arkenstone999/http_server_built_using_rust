@@ -22,6 +22,20 @@ impl<'buf> Request<'buf> {
         &self.method
     }
 
+    pub fn method_str(&self) -> &str {
+        match self.method {
+            Method::GET => "GET",
+            Method::POST => "POST",
+            Method::PUT => "PUT",
+            Method::DELETE => "DELETE",
+            Method::HEAD => "HEAD",
+            Method::OPTIONS => "OPTIONS",
+            Method::PATCH => "PATCH",
+            Method::CONNECT => "CONNECT",
+            Method::TRACE => "TRACE",
+        }
+    }
+
     pub fn query_string(&self) -> Option<&QueryString> {
         self.query_string.as_ref()
     }
@@ -30,15 +44,18 @@ impl<'buf> Request<'buf> {
 impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
     type Error = ParseError;
 
-    // GET /search?name=abc&sort=1 HTTP/1.1\r\n...HEADERS...
     fn try_from(buf: &'buf [u8]) -> Result<Request<'buf>, Self::Error> {
         let request = str::from_utf8(buf)?;
+        
+        if request.len() > 8192 {
+            return Err(ParseError::RequestTooLarge);
+        }
 
         let (method, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         let (mut path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         let (protocol, _) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
 
-        if protocol != "HTTP/1.1" {
+        if !protocol.starts_with("HTTP/1.") {
             return Err(ParseError::InvalidProtocol);
         }
 
@@ -48,6 +65,10 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
         if let Some(i) = path.find('?') {
             query_string = Some(QueryString::from(&path[i + 1..]));
             path = &path[..i];
+        }
+
+        if path.contains("..") || path.contains('\0') {
+            return Err(ParseError::InvalidPath);
         }
 
         Ok(Self {
@@ -64,7 +85,6 @@ fn get_next_word(request: &str) -> Option<(&str, &str)> {
             return Some((&request[..i], &request[i + 1..]));
         }
     }
-
     None
 }
 
@@ -73,6 +93,8 @@ pub enum ParseError {
     InvalidEncoding,
     InvalidProtocol,
     InvalidMethod,
+    InvalidPath,
+    RequestTooLarge,
 }
 
 impl ParseError {
@@ -82,6 +104,8 @@ impl ParseError {
             Self::InvalidEncoding => "Invalid Encoding",
             Self::InvalidProtocol => "Invalid Protocol",
             Self::InvalidMethod => "Invalid Method",
+            Self::InvalidPath => "Invalid Path",
+            Self::RequestTooLarge => "Request Too Large",
         }
     }
 }
