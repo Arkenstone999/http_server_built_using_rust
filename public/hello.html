@@ -1,13 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="utf-8">
-    <title>Cool Title</title>
+  <meta charset="utf-8" />
+  <title>CHARLES // Rust Server</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0e0f12;
+      --fg: #c8ffc8;
+      --primary: #00ff88;
+      --accent: #ff6a00;
+      --dim: #6b6b6b;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: radial-gradient(1000px 600px at 50% -20%, #162013 0%, var(--bg) 60%);
+      color: var(--fg);
+      font-family: "Courier New", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+    .terminal {
+      background: #0b0c0f;
+      border: 1px solid #1f2720;
+      border-radius: 10px;
+      box-shadow: 0 0 24px rgba(0,255,136,0.08), inset 0 0 40px rgba(0,255,136,0.03);
+      padding: 22px;
+    }
+    .title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--primary);
+      font-weight: bold;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      margin: 0 0 18px 0;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 14px var(--accent); }
+    .banner {
+      margin: 0;
+      line-height: 1.05;
+      white-space: pre;
+      color: #b9ffda;
+      text-shadow: 0 0 6px rgba(0,255,136,.55), 0 0 22px rgba(0,255,136,.25);
+      user-select: text;
+      overflow: auto;
+    }
+    .subtitle {
+      margin: 8px 0 18px 0;
+      color: var(--dim);
+    }
+    .ascii {
+      color: #ff6a00;
+      text-align: center;
+      white-space: pre;
+      margin: 10px 0 0;
+      text-shadow: 0 0 8px rgba(255,106,0,.35);
+    }
+    .btn {
+      display: inline-block;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      background: transparent;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: .15s ease;
+      font: inherit;
+      margin-top: 16px;
+    }
+    .btn:hover { background: rgba(0,255,136,.12); box-shadow: 0 0 18px rgba(0,255,136,.25); }
+    #output {
+      margin-top: 16px;
+      white-space: pre-wrap;
+      min-height: 8ch;
+    }
+    .cursor {
+      display: inline-block;
+      width: .65ch;
+      background: var(--primary);
+      margin-left: 3px;
+      animation: blink 1s steps(1, end) infinite;
+      box-shadow: 0 0 8px rgba(0,255,136,.6);
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+  </style>
 </head>
-
 <body>
-    <h1>Welcome from hello.html</h1>
-</body>
+  <div class="container">
+    <div class="terminal">
+      <div class="title"><span class="dot"></span> /srv/www/hello.html — rust::server</div>
 
+      <!-- BIG ASCII BANNER: CHARLES -->
+      <pre class="banner">
+ ██████  ██   ██  █████  ██████  ██      ███████ ███████
+██       ██   ██ ██   ██ ██   ██ ██      ██      ██
+██       ███████ ███████ ██████  ██      █████   █████
+██       ██   ██ ██   ██ ██   ██ ██      ██      ██
+ ██████  ██   ██ ██   ██ ██   ██ ███████ ███████ ███████
+      </pre>
+
+      <div class="subtitle">made by Arkenstone999, au charbon rustien comme jamais, envoyez vos api requests</div>
+
+      <!-- Ferris -->
+      <pre class="ascii">
+        _     _
+     _/ o\~~~/o \_
+    (    .     ,  )
+     \__\_v_~_v_/__/
+      </pre>
+      <div style="text-align:center;margin-top:4px;">my http server fully built with Rust #crabe</div>
+
+      <button class="btn" onclick="runGeek()">▶ run </button>
+      <div id="output"></div>
+      <div><span class="cursor">&nbsp;</span></div>
+    </div>
+  </div>
+
+  <script>
+    const lines = [
+      "[BOOT] init kernel: rustc v1.x · target=x86_64-pc-windows-msvc",
+      "[OK]   zero-cost abstractions engaged",
+      "[OK]   memory safety (no GC) borrow checker standing by",
+      "[OK]   async runtime: tokio::net online",
+      "[INFO] serving from ./public on 127.0.0.1:8080 totalement op comme solalune",
+      "[USER] Welcome2zesal using rust"
+    ];
+    function runGeek() {
+      const out = document.getElementById("output");
+      out.textContent = "";
+      lines.forEach((l, i) => setTimeout(() => out.textContent += l + "\n", i * 420));
+    }
+  </script>
+</body>
 </html>

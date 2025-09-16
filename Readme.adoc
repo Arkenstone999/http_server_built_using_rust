@@ -1,0 +1,13 @@
+this is a http server fully built in rust. 
+To run : 
+
+1) git clone https://github.com/Arkenstone999/http_server_built_using_rust.git
+
+cargo run 
+
+then you will be able to visit http://127.0.0.1:8080/hello and see this. The http server is ready
+
+![alt text](image.png)
+
+
+then cargo clean to free the memory
