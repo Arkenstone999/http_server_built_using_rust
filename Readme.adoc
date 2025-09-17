@@ -7,7 +7,5 @@ cargo run
 
 then you will be able to visit http://127.0.0.1:8080/hello and see this. The http server is ready
 
-![alt text](image.png)
-
 
 then cargo clean to free the memory
