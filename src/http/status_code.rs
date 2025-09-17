@@ -4,10 +4,12 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 pub enum StatusCode {
     Ok = 200,
     BadRequest = 400,
+    Forbidden = 403,
     NotFound = 404,
     MethodNotAllowed = 405,
     RequestTimeout = 408,
     PayloadTooLarge = 413,
+    TooManyRequests = 429,
     InternalServerError = 500,
 }
 
@@ -16,10 +18,12 @@ impl StatusCode {
         match self {
             Self::Ok => "OK",
             Self::BadRequest => "Bad Request",
+            Self::Forbidden => "Forbidden",
             Self::NotFound => "Not Found",
             Self::MethodNotAllowed => "Method Not Allowed",
             Self::RequestTimeout => "Request Timeout",
             Self::PayloadTooLarge => "Payload Too Large",
+            Self::TooManyRequests => "Too Many Requests",
             Self::InternalServerError => "Internal Server Error",
         }
     }

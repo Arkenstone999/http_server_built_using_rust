@@ -3,10 +3,12 @@
 use server::Server;
 use std::env;
 use website_handler::WebsiteHandler;
+use security::SecurityConfig;
 
 mod http;
 mod server;
 mod website_handler;
+mod security;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -18,7 +20,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     println!("Server starting on 127.0.0.1:8080");
     println!("Serving files from: {}", canonical_path.display());
+    println!("Security features enabled: Rate limiting, Security headers, File type validation");
     
+    let security_config = SecurityConfig::default();
     let server = Server::new("127.0.0.1:8080".to_string());
-    server.run(WebsiteHandler::new(canonical_path)).await
+    server.run(WebsiteHandler::new(canonical_path, security_config)).await
 }
