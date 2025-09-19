@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rust Server API Dashboard</title>
+  <style>
+    :root {
+      /* Futuristic palette */
+      --bg: #0b0f17;
+      --panel: #101828;
+      --panel-2: #0e1525;
+      --text: #e6edf3;
+      --muted: #9aa4b2;
+
+      /* Accents */
+      --primary: #5ad1ff;   /* cyan glow */
+      --success: #2bd97f;
+      --danger: #ff5577;
+      --warning: #ffc857;
+      --info: #69a8ff;
+
+      /* Borders & shadows */
+      --border: rgba(255,255,255,0.08);
+      --glow: 0 0 0px rgba(0,0,0,0), 0 0 24px rgba(90,209,255,0.15);
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --radius-sm: 7px;
+
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(90,209,255,0.08), transparent 60%),
+        radial-gradient(1000px 600px at 90% 110%, rgba(138,99,255,0.06), transparent 60%),
+        linear-gradient(180deg, #080c12 0%, #0b0f17 100%);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)) , var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--glow);
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 28px 28px 22px;
+      border-bottom: 1px solid var(--border);
+      background:
+        linear-gradient(180deg, rgba(90,209,255,0.08), rgba(90,209,255,0) 60%),
+        linear-gradient(90deg, rgba(138,99,255,0.06), rgba(138,99,255,0) 60%),
+        var(--panel-2);
+    }
+
+    .title {
+      letter-spacing: 0.3px;
+      font-weight: 650;
+      font-size: 28px;
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .title .badge {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    .dashboard { padding: 24px; }
+
+    /* Stats */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)) , var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+    }
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .stat-value {
+      font-family: var(--mono);
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    /* API grid */
+    .api-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .api-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.01)), var(--panel);
+      transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+    }
+    .api-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      border-color: rgba(90,209,255,0.28);
+    }
+    .api-card h3 {
+      margin: 0 0 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 16px;
+      letter-spacing: 0.2px;
+    }
+    .api-card p {
+      margin: 0 0 12px 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .method-badge {
+      font-family: var(--mono);
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      color: var(--muted);
+    }
+    .method-get { color: var(--info); border-color: rgba(105,168,255,0.4); }
+    .method-post { color: var(--primary); border-color: rgba(90,209,255,0.45); }
+    .method-delete { color: var(--danger); border-color: rgba(255,85,119,0.45); }
+
+    /* Inputs */
+    .input-group { margin: 10px 0 12px; }
+    .input-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+    }
+    .input-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: #0b1220;
+      color: var(--text);
+      outline: none;
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+    .input-group input:focus {
+      border-color: rgba(90,209,255,0.5);
+      box-shadow: 0 0 0 4px rgba(90,209,255,0.08);
+    }
+
+    /* Buttons */
+    .btn {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      letter-spacing: 0.2px;
+      transition: border-color 120ms ease, box-shadow 120ms ease, transform 40ms ease;
+      margin: 6px 6px 0 0;
+      user-select: none;
+    }
+    .btn:hover {
+      border-color: rgba(90,209,255,0.35);
+      box-shadow: 0 0 0 6px rgba(90,209,255,0.07);
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { border-color: rgba(90,209,255,0.5); }
+    .btn-success { border-color: rgba(43,217,127,0.5); }
+    .btn-danger  { border-color: rgba(255,85,119,0.5); }
+
+    /* Response area */
+    .response-area {
+      background: #0b1220;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--primary);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+    .response-area h3 {
+      margin: 0 0 10px 0;
+      font-size: 15px;
+      letter-spacing: 0.2px;
+      color: var(--text);
+    }
+    pre {
+      background: #0b1220;
+      color: #cfe6ff;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 0;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+
+    /* Accessibility */
+    @media (prefers-reduced-motion: reduce) {
+      .api-card, .btn { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <div class="title">
+        Rust Server API Dashboard
+        <span class="badge">v1 · local</span>
+      </div>
+      <p class="subtitle">Interactive console for exploring and validating API endpoints.</p>
+    </header>
+
+    <section class="dashboard">
+      <!-- Server Stats -->
+      <div class="stats-grid" id="stats-grid">
+        <!-- Populated at runtime -->
+      </div>
+
+      <!-- API Endpoints -->
+      <div class="api-grid">
+        <!-- Health Check -->
+        <article class="api-card">
+          <h3><span class="method-badge method-get">GET</span> Health Check</h3>
+          <p>Verify that the service is reachable and responsive.</p>
+          <button class="btn btn-success" onclick="testEndpoint('/api/ping')">Ping Server</button>
+          <button class="btn btn-primary" onclick="testEndpoint('/api/info')">Server Info</button>
+        </article>
+
+        <!-- Users -->
+        <article class="api-card">
+          <h3><span class="method-badge method-get">GET</span> Users</h3>
+          <p>Retrieve users or fetch a specific user by identifier.</p>
+          <button class="btn btn-primary" onclick="testEndpoint('/api/users')">Get All Users</button>
+
+          <div class="input-group">
+            <label for="userId">User ID</label>
+            <input type="number" id="userId" min="1" value="1" inputmode="numeric" />
+          </div>
+          <button class="btn" onclick="getUserById()">Get User by ID</button>
+        </article>
+
+        <!-- Search -->
+        <article class="api-card">
+          <h3><span class="method-badge method-get">GET</span> Search</h3>
+          <p>Run a query with URL parameters.</p>
+          <div class="input-group">
+            <label for="searchQuery">Query</label>
+            <input type="text" id="searchQuery" placeholder="rust, api, server..." value="rust" />
+          </div>
+          <button class="btn" onclick="performSearch()">Search</button>
+        </article>
+
+        <!-- Time -->
+        <article class="api-card">
+          <h3><span class="method-badge method-get">GET</span> Time Service</h3>
+          <p>Return the current server timestamp.</p>
+          <button class="btn" onclick="testEndpoint('/api/time')">Get Server Time</button>
+        </article>
+
+        <!-- Echo -->
+        <article class="api-card">
+          <h3><span class="method-badge method-post">POST</span> Echo Test</h3>
+          <p>Send a payload and receive it back for inspection.</p>
+          <button class="btn" onclick="testEcho()">Send Echo Request</button>
+        </article>
+
+        <!-- Load Test -->
+        <article class="api-card">
+          <h3><span class="method-badge method-get">GET</span> Load Test</h3>
+          <p>Issue multiple concurrent requests to assess performance.</p>
+          <button class="btn btn-danger" onclick="stressTest()">Run Load Test (10)</button>
+        </article>
+      </div>
+
+      <!-- Response Display -->
+      <section class="response-area" aria-live="polite" aria-atomic="true">
+        <h3>Response</h3>
+        <pre id="responseOutput">Select an endpoint to begin…</pre>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    // Base URL for API calls
+    const API_BASE = window.location.origin;
+
+    // Utility: write response with status styling
+    function displayResponse(payload, status = 'success') {
+      const output = document.getElementById('responseOutput');
+      const timestamp = new Date().toLocaleTimeString();
+      const formatted = typeof payload === 'object' ? JSON.stringify(payload, null, 2) : String(payload);
+
+      output.textContent = `[${timestamp}] ${formatted}`;
+      const container = output.parentElement;
+      if (status === 'error') {
+        container.style.borderLeftColor = 'var(--danger)';
+      } else if (status === 'warning') {
+        container.style.borderLeftColor = 'var(--warning)';
+      } else {
+        container.style.borderLeftColor = 'var(--primary)';
+      }
+    }
+
+    // Generic endpoint tester
+    async function testEndpoint(endpoint, method = 'GET', body = null) {
+      const output = document.getElementById('responseOutput');
+      output.textContent = 'Loading…';
+      output.parentElement.style.borderLeftColor = 'var(--warning)';
+
+      try {
+        const options = {
+          method,
+          headers: { 'Content-Type': 'application/json' }
+        };
+        if (body) options.body = JSON.stringify(body);
+
+        const res = await fetch(API_BASE + endpoint, options);
+        const text = await res.text();
+        let data = text;
+        try { data = JSON.parse(text); } catch {}
+
+        displayResponse({
+          status: res.status,
+          statusText: res.statusText,
+          endpoint,
+          method,
+          data
+        }, res.ok ? 'success' : 'error');
+
+      } catch (err) {
+        displayResponse({ error: 'Network Error', message: err.message, endpoint }, 'error');
+      }
+    }
+
+    // Specific actions
+    function getUserById() {
+      const userId = document.getElementById('userId').value;
+      if (!userId) {
+        displayResponse({ error: 'Validation', message: 'Please provide a user ID.' }, 'warning');
+        return;
+      }
+      testEndpoint(`/api/users/${encodeURIComponent(userId)}`);
+    }
+
+    function performSearch() {
+      const q = document.getElementById('searchQuery').value;
+      if (!q) {
+        displayResponse({ error: 'Validation', message: 'Please provide a search query.' }, 'warning');
+        return;
+      }
+      testEndpoint(`/api/search?q=${encodeURIComponent(q)}`);
+    }
+
+    function testEcho() {
+      testEndpoint('/api/echo', 'POST', {
+        message: 'Hello from the dashboard',
+        timestamp: Date.now(),
+        test: true
+      });
+    }
+
+    async function stressTest() {
+      displayResponse('Running load test with 10 concurrent requests…', 'warning');
+
+      const start = performance.now();
+      try {
+        const requests = Array.from({ length: 10 }, () => fetch(API_BASE + '/api/ping'));
+        const responses = await Promise.allSettled(requests);
+        const end = performance.now();
+        const duration = end - start;
+
+        const successful = responses.filter(r => r.status === 'fulfilled' && r.value.ok).length;
+        const failed = responses.length - successful;
+
+        const result = {
+          totalRequests: responses.length,
+          durationMs: Math.round(duration),
+          averageResponseTimeMs: Math.round(duration / responses.length),
+          successfulRequests: successful,
+          failedRequests: failed,
+          requestsPerSecond: Math.round(responses.length / (duration / 1000))
+        };
+
+        displayResponse(result, failed ? 'error' : 'success');
+      } catch (err) {
+        displayResponse({ error: 'Load test failed', message: err.message }, 'error');
+      }
+    }
+
+    // Stats loader
+    async function loadStats() {
+      try {
+        const res = await fetch(API_BASE + '/api/info');
+        if (!res.ok) return;
+        const json = await res.json();
+        const statsGrid = document.getElementById('stats-grid');
+
+        if (json && (json.success === true) && json.data) {
+          const s = json.data;
+          statsGrid.innerHTML = `
+            <div class="stat-card">
+              <div class="stat-label">Total Requests</div>
+              <div class="stat-value">${s.requests_served ?? 0}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Server Version</div>
+              <div class="stat-value">${s.version ?? 'Unknown'}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Status</div>
+              <div class="stat-value">${(s.status ?? 'online').toString().toUpperCase()}</div>
+            </div>
+          `;
+        } else {
+          // Fallback for different shapes
+          statsGrid.innerHTML = `
+            <div class="stat-card">
+              <div class="stat-label">Status</div>
+              <div class="stat-value">ONLINE</div>
+            </div>
+          `;
+        }
+      } catch {
+        /* Silent fail for stats */
+      }
+    }
+
+    loadStats();
+    setInterval(loadStats, 30000);
+  </script>
+</body>
+</html>
