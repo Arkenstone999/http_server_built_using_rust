@@ -5,7 +5,7 @@ To run :
 
 2) cargo run 
 
-then you will be able to visit http://127.0.0.1:8080/hello . The http server is ready
+then you will be able to visit http://127.0.0.1:8080/hello or http://127.0.0.1:8080/api.html . The http server is ready
 
 
 then cargo clean to free the memory
